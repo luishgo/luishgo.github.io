@@ -14,10 +14,10 @@ baseurl: ""
 # Of course don't forget to change the username and projectname to YOUR username and project
 
 # Name of website
-title: Luis HGO's Blog
+title: um blog
 
 # Short description of your site
-description: A virtual proof that name is awesome!
+description: Apenas alguns posts aleatórios
 
 # --- Navigation bar options --- #
 
@@ -28,8 +28,6 @@ description: A virtual proof that name is awesome!
 # List of links in the navigation bar
 navbar-links:
   Home: ""
-  About Me: "aboutme.html"
-  Contact: "contact.html"
   
 # --- Footer options --- #
 
