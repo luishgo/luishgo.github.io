@@ -1,0 +1,26 @@
+baseurl = "http://username.github.io"
+languageCode = "pt-br"
+title = "Crap Crapersen"
+theme = "beautifulhugo"
+pygmentsUseClasses = true
+disqusShortname = "luishgo"
+#googleAnalytics = "XXX"
+
+[Params]
+  title = "Crap Crapersen"
+  subtitle = "Apenas alguns posts aleatórios"
+
+[Author]
+  name = "Luis HGO"
+  github = "luishgo"
+  twitter = "luishgo"
+
+[[menu.main]]
+    name = "Blog"
+    url = "/"
+    weight = 1
+
+[[menu.main]]
+    name = "About"
+    url = "/page/about/"
+    weight = 2

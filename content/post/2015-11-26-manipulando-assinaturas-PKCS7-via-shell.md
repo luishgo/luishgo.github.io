@@ -1,11 +1,12 @@
 ---
-layout: post
+date: 2015-11-26T00:00:00Z
 title: Manipulando assinaturas PKCS#7 via Shell
+url: /2015/11/26/manipulando-assinaturas-PKCS7-via-shell/
 ---
 
 Esses tempos, estava com um conjunto de mais de 1000 assinaturas inválidas. Eram de diferentes usuários, seria muito complicado refazê-las. Por um problema na geração do pacote PKCS#7, a data salva no atributo `signingTime` estava adiantada alguns segundos, invalidando a assinatura em questão.
 
-Para corrigí-las, precisei descobrir como manipular os atributos de uma assinatura PKCS#7. No caso, precisava encontrar o valor de `signingTime` correto para tornar a assinatura válida. Sabendo que o valor estava adiantado e o atributo tem precisão de segundos, a proposta de solução foi de ir atrasando 1 segundo no `signingTime` até encontrar o valor onde o pacote PKCS#7 ficaria válido.
+Para corrigi-las, precisei descobrir como manipular os atributos de uma assinatura PKCS#7. No caso, precisava encontrar o valor de `signingTime` correto para tornar a assinatura válida. Sabendo que o valor estava adiantado e o atributo tem precisão de segundos, a proposta de solução foi de ir atrasando 1 segundo no `signingTime` até encontrar o valor onde o pacote PKCS#7 ficaria válido.
 
 A ideia da solução foi usar apenas comando do shell para praticar. No fim das contas, foi preciso um pequeno script em Perl para decrementar um segundo da data extraída do `signingTime`.
 
