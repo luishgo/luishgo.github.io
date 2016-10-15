@@ -54,20 +54,20 @@ disqusShortname = "luishgo"
 
     # Text for the top menu link, which goes the root URL for the site.
     # Default (if omitted) is "Blog".
-    home = "Blog"
+    home = "Início"
 
     # Metadata used to drive integrations.
     googleAnalytics = "UA-71146551-1"
-    #gravatarHash = "MD5 hash of your Gravatar email address"
+    gravatarHash = "6b7f7b5ad96477e0ab3818f975c87d5e"
 
     # Sidebar social links, these must be full URLs.
-    github = "luishgo"
+    github = "http://github.com/luishgo"
     bitbucket = ""
     stackOverflow = ""
     linkedin = ""
     googleplus = ""
     facebook = ""
-    twitter = "luishgo"
+    twitter = "http://twitter.com/luishgo"
     youtube = ""
 
     # Other social-like sidebar links
