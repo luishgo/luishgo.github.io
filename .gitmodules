@@ -1,0 +1,9 @@
+[submodule "themes/beautifulhugo"]
+	path = themes/beautifulhugo
+	url = https://github.com/halogenica/beautifulhugo.git
+[submodule "themes/strange-case"]
+	path = themes/strange-case
+	url = https://github.com/ExchangeRate-API/strange-case.git
+[submodule "themes/hyde-x"]
+	path = themes/hyde-x
+	url = https://github.com/zyro/hyde-x
