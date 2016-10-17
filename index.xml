@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Crap Crapersen</title>
+    <link>http://luishgo.github.io/index.xml</link>
+    <description>Recent content on Crap Crapersen</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>pt-br</language>
+    <lastBuildDate>Thu, 26 Nov 2015 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://luishgo.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Manipulando assinaturas PKCS#7 via Shell</title>
+      <link>http://luishgo.github.io/2015/11/26/manipulando-assinaturas-pkcs7-via-shell/</link>
+      <pubDate>Thu, 26 Nov 2015 00:00:00 +0000</pubDate>
+      
+      <guid>http://luishgo.github.io/2015/11/26/manipulando-assinaturas-pkcs7-via-shell/</guid>
+      <description>
+
+&lt;p&gt;Esses tempos, estava com um conjunto de mais de 1000 assinaturas inválidas. Eram de diferentes usuários, seria muito complicado refazê-las. Por um problema na geração do pacote PKCS#7, a data salva no atributo &lt;code&gt;signingTime&lt;/code&gt; estava adiantada alguns segundos, invalidando a assinatura em questão.&lt;/p&gt;
+
+&lt;p&gt;Para corrigi-las, precisei descobrir como manipular os atributos de uma assinatura PKCS#7. No caso, precisava encontrar o valor de &lt;code&gt;signingTime&lt;/code&gt; correto para tornar a assinatura válida. Sabendo que o valor estava adiantado e o atributo tem precisão de segundos, a proposta de solução foi de ir atrasando 1 segundo no &lt;code&gt;signingTime&lt;/code&gt; até encontrar o valor onde o pacote PKCS#7 ficaria válido.&lt;/p&gt;
+
+&lt;p&gt;A ideia da solução foi usar apenas comando do shell para praticar. No fim das contas, foi preciso um pequeno script em Perl para decrementar um segundo da data extraída do &lt;code&gt;signingTime&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;A implementação da solução foi dividida nos passos abaixo:&lt;/p&gt;
+
+&lt;h2 id=&#34;verificar-a-assinatura&#34;&gt;Verificar a assinatura&lt;/h2&gt;
+
+&lt;p&gt;O primeiro passo foi verificar uma assinatura PKCS#7 detached usando o openssl:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;openssl smime -verify -inform &amp;lt;DER ou PEM&amp;gt; -in &amp;lt;arquivo da assinatura&amp;gt; -content &amp;lt;arquivo assinado&amp;gt; -noverify&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Apesar de parecerem contraditórios, &lt;code&gt;-verify&lt;/code&gt; manda a assinatura ser verificada e o &lt;code&gt;-noverify&lt;/code&gt; faz com que os certificados usados na assinatura não sejam verificados. Assim, apenas os atributos assinados são utilizados na verificação.&lt;/p&gt;
+
+&lt;h2 id=&#34;encontrar-o-offset-do-atributo-signingtime&#34;&gt;Encontrar o &lt;em&gt;offset&lt;/em&gt; do atributo &lt;code&gt;signingTime&lt;/code&gt;&lt;/h2&gt;
+
+&lt;p&gt;Dentro de um pacote PKCS#7, pode-se encontrar mais de um &lt;code&gt;signingTime&lt;/code&gt; após a execução do &lt;code&gt;openssl asn1parse&lt;/code&gt;:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;openssl asn1parse -in &amp;lt;arquivo da assinatura&amp;gt; | grep signingTime --after-context=2&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Exemplo de resultado:&lt;/p&gt;
+
+&lt;pre&gt;2233:d=7  hl=2 l=   9 prim: OBJECT            :signingTime
+2244:d=7  hl=2 l=  15 cons: SET
+2246:d=8  hl=2 l=  13 prim: UTCTIME           :150826172903Z
+--
+5162:d=15 hl=2 l=   9 prim: OBJECT            :signingTime
+5173:d=15 hl=2 l=  15 cons: SET
+5175:d=16 hl=2 l=  13 prim: UTCTIME           :150826173747Z
+&lt;/pre&gt;
+
+&lt;p&gt;O &lt;code&gt;--after-context=2&lt;/code&gt; ou &lt;code&gt;-A 2&lt;/code&gt; apresenta duas linhas após a linha encontrada com o padrão.&lt;/p&gt;
+
+&lt;p&gt;O primeiro &lt;code&gt;signingTime&lt;/code&gt; é o relevante, neste caso. Para apresentar apenas a linha correta, adicionei:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;head -3 | tail -1&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;O &lt;code&gt;head -3&lt;/code&gt; retorna apenas as três primeiras linhas e o &lt;code&gt;tail -1&lt;/code&gt; retorna apenas a última linha.&lt;/p&gt;
+
+&lt;p&gt;Agora, basta extrair o primeiro número da linha e somar o tamanho do cabeçalho, informado na própria linha, &lt;code&gt;hl=2&lt;/code&gt;:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;awk -F &#39;:&#39; &#39;{print $1+2}&#39;&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;O &lt;code&gt;-F&lt;/code&gt; determina o separador de campos. O valor a ser somado, &lt;code&gt;+2&lt;/code&gt;, é referente ao tamanho do cabeçalho do campo e até poderia ser extraído da linha, mas como é um valor conhecido e fixo no pacote, não valia a pena o esforço.&lt;/p&gt;
+
+&lt;p&gt;Tudo junto ficou:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;openssl asn1parse -in &amp;lt;arquivo da assinatura&amp;gt; | grep signingTime -A 2 | head -3 | tail -1 | awk -F &#39;:&#39; &#39;{print $1+2}&#39;&lt;/code&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;extrair-o-valor-do-signingtime&#34;&gt;Extrair o valor do &lt;code&gt;signingTime&lt;/code&gt;&lt;/h2&gt;
+
+&lt;p&gt;De posse do &lt;em&gt;offset&lt;/em&gt;, o comando &lt;code&gt;dd&lt;/code&gt; permitiu extrair o valor do &lt;code&gt;signingTime&lt;/code&gt;:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;dd if=&amp;lt;arquivo da assinatura&amp;gt; bs=1 count=13 skip=&amp;lt;offset encontrado&amp;gt; status=none&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;A opção &lt;code&gt;bs&lt;/code&gt; define o tamanho do bloco e a opção &lt;code&gt;count&lt;/code&gt; define a quantidade desses blocos para copiar. No caso, os 13 bytes do arquivo de assinatura a partir da posição determinada pelo &lt;code&gt;skip&lt;/code&gt;. O &lt;code&gt;status=none&lt;/code&gt; suprime todas as informações de transferência e etc. que o &lt;code&gt;dd&lt;/code&gt; normalmente emite, sobrando apenas o valor do &lt;code&gt;signingTime&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&#34;alterar-o-valor-do-signingtime&#34;&gt;Alterar o valor do &lt;code&gt;signingTime&lt;/code&gt;&lt;/h2&gt;
+
+&lt;p&gt;Nesse ponto, os meus conhecimentos em shell fraquejaram e precisei apelar para um pequeno script em perl para decrementar X segundos do &lt;code&gt;signingTime&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use Time::Piece;
+
+print subtract($ARGV[0], $ARGV[1]);
+
+sub subtract {
+  my ($date, $seconds)=@_;
+  my $t = Time::Piece-&gt;strptime($date, &#34;%y%m%d%H%M%SZ&#34;);
+  $t-=$seconds;
+  return $t-&gt;strftime(&#34;%y%m%d%H%M%SZ&#34;);
+}
+&lt;/pre&gt;
+
+&lt;p&gt;Para implementar isso em shell, teria que descobrir como interpretar a data no formato do &lt;code&gt;signingTime&lt;/code&gt; antes de poder alterá-la. Complicado :P.&lt;/p&gt;
+
+&lt;p&gt;O script apenas retorna o novo valor de data, sendo necessário colocá-lo no arquivo de assinatura na posição correta. Mais uma vez, o &lt;code&gt;dd&lt;/code&gt; faz o trabalho:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;dd of=&amp;lt;arquivo da assinatura&amp;gt; bs=1 seek=&amp;lt;offset encontrado&amp;gt; count=13 conv=notrunc status=none&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;O &lt;code&gt;seek&lt;/code&gt; entra no lugar do &lt;code&gt;skip&lt;/code&gt; quando tratamos de uma operação de escrita.&lt;/p&gt;
+
+&lt;h2 id=&#34;juntando-tudo&#34;&gt;Juntando tudo&lt;/h2&gt;
+
+&lt;p&gt;Com os passos anteriores testados, bastou juntar tudo para descobrir o valor correto de &lt;code&gt;signingTime&lt;/code&gt; para cada assinatura problemática:&lt;/p&gt;
+
+&lt;pre&gt;
+FILE=$1
+SIGNATURE=$2
+
+OFFSET=`openssl asn1parse -inform DER -in $SIGNATURE -i | grep signingTime -A 2 | head -3 | tail -1 | awk -F &#39;:&#39; &#39;{print $1+2}&#39;`
+UTCTIME=`dd if=$SIGNATURE bs=1 count=13 skip=$OFFSET status=none`
+FOUND=false
+for i in $(seq 0 1000)
+do       
+  perl time.pl $UTCTIME $i | dd of=$SIGNATURE bs=1 seek=$OFFSET count=13 conv=notrunc status=none 
+  if openssl smime -verify -inform DER -in $SIGNATURE -content $FILE -noverify 2&gt;&amp;1 &gt; /dev/null | grep &#34;Verification successful&#34;
+  then
+    echo $SIGNATURE $i
+    FOUND=true
+    break
+  fi
+done
+if [ &#34;$FOUND&#34; = false ]
+then
+    echo $SIGNATURE &#34;Não encontrada&#34;
+fi
+&lt;/pre&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

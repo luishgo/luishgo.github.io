@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>Manipulando assinaturas PKCS#7 via Shell &middot; Luis HGO</title>
+
+  
+  <link rel="stylesheet" href="http://luishgo.github.io/css/poole.css">
+  <link rel="stylesheet" href="http://luishgo.github.io/css/hyde.css">
+  <link rel="stylesheet" href="http://luishgo.github.io/css/poole-overrides.css">
+  <link rel="stylesheet" href="http://luishgo.github.io/css/hyde-overrides.css">
+  <link rel="stylesheet" href="http://luishgo.github.io/css/hyde-x.css">
+  <link rel="stylesheet" href="http://luishgo.github.io/css/highlight/sunburst.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="http://luishgo.github.io/touch-icon-144-precomposed.png">
+  <link href="http://luishgo.github.io/favicon.png" rel="icon">
+
+  
+  
+  
+  
+
+  <meta name="description" content="Your default page description">
+  <meta name="keywords" content="your,default,page,keywords">
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-71146551-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+  
+</head>
+<body class="theme-base-0d layout-reverse">
+<div class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      
+        <img src="https://www.gravatar.com/avatar/6b7f7b5ad96477e0ab3818f975c87d5e?s=200"
+             alt="gravatar" title="Luis HGO">
+      
+      <h1>Luis HGO</h1>
+      <p class="lead">Apenas alguns posts aleatórios.</p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li class="sidebar-nav-item"><a href="http://luishgo.github.io/">Início</a></li>
+      
+    </ul>
+
+    <ul class="sidebar-nav">
+      <li class="sidebar-nav-item">
+      <a href="http://github.com/luishgo"><i class="fa fa-github-square fa-3x"></i></a>
+      
+      
+      
+      
+      
+      <a href="http://twitter.com/luishgo"><i class="fa fa-twitter-square fa-3x"></i></a>
+      
+      
+      </li>
+    </ul>
+
+    
+
+    <p>Copyright &copy; 2016 <a href="http://luishgo.github.io/license/">License</a><br/>
+       Powered by <a href="http://gohugo.io">Hugo</a> and <a href="https://github.com/zyro/hyde-x">Hyde-X</a></p>
+  </div>
+</div>
+
+
+<div class="content container">
+  <div class="post">
+    <h1 class="post-title">Manipulando assinaturas PKCS#7 via Shell</h1>
+    <span class="post-date">Nov 26, 2015 &middot; 4 minute read &middot; <a href="http://luishgo.github.io/2015/11/26/manipulando-assinaturas-pkcs7-via-shell/#disqus_thread">Comments</a>
+    </span>
+    
+
+<p>Esses tempos, estava com um conjunto de mais de 1000 assinaturas inválidas. Eram de diferentes usuários, seria muito complicado refazê-las. Por um problema na geração do pacote PKCS#7, a data salva no atributo <code>signingTime</code> estava adiantada alguns segundos, invalidando a assinatura em questão.</p>
+
+<p>Para corrigi-las, precisei descobrir como manipular os atributos de uma assinatura PKCS#7. No caso, precisava encontrar o valor de <code>signingTime</code> correto para tornar a assinatura válida. Sabendo que o valor estava adiantado e o atributo tem precisão de segundos, a proposta de solução foi de ir atrasando 1 segundo no <code>signingTime</code> até encontrar o valor onde o pacote PKCS#7 ficaria válido.</p>
+
+<p>A ideia da solução foi usar apenas comando do shell para praticar. No fim das contas, foi preciso um pequeno script em Perl para decrementar um segundo da data extraída do <code>signingTime</code>.</p>
+
+<p>A implementação da solução foi dividida nos passos abaixo:</p>
+
+<h2 id="verificar-a-assinatura">Verificar a assinatura</h2>
+
+<p>O primeiro passo foi verificar uma assinatura PKCS#7 detached usando o openssl:</p>
+
+<p><code>openssl smime -verify -inform &lt;DER ou PEM&gt; -in &lt;arquivo da assinatura&gt; -content &lt;arquivo assinado&gt; -noverify</code></p>
+
+<p>Apesar de parecerem contraditórios, <code>-verify</code> manda a assinatura ser verificada e o <code>-noverify</code> faz com que os certificados usados na assinatura não sejam verificados. Assim, apenas os atributos assinados são utilizados na verificação.</p>
+
+<h2 id="encontrar-o-offset-do-atributo-signingtime">Encontrar o <em>offset</em> do atributo <code>signingTime</code></h2>
+
+<p>Dentro de um pacote PKCS#7, pode-se encontrar mais de um <code>signingTime</code> após a execução do <code>openssl asn1parse</code>:</p>
+
+<p><code>openssl asn1parse -in &lt;arquivo da assinatura&gt; | grep signingTime --after-context=2</code></p>
+
+<p>Exemplo de resultado:</p>
+
+<pre>2233:d=7  hl=2 l=   9 prim: OBJECT            :signingTime
+2244:d=7  hl=2 l=  15 cons: SET
+2246:d=8  hl=2 l=  13 prim: UTCTIME           :150826172903Z
+--
+5162:d=15 hl=2 l=   9 prim: OBJECT            :signingTime
+5173:d=15 hl=2 l=  15 cons: SET
+5175:d=16 hl=2 l=  13 prim: UTCTIME           :150826173747Z
+</pre>
+
+<p>O <code>--after-context=2</code> ou <code>-A 2</code> apresenta duas linhas após a linha encontrada com o padrão.</p>
+
+<p>O primeiro <code>signingTime</code> é o relevante, neste caso. Para apresentar apenas a linha correta, adicionei:</p>
+
+<p><code>head -3 | tail -1</code></p>
+
+<p>O <code>head -3</code> retorna apenas as três primeiras linhas e o <code>tail -1</code> retorna apenas a última linha.</p>
+
+<p>Agora, basta extrair o primeiro número da linha e somar o tamanho do cabeçalho, informado na própria linha, <code>hl=2</code>:</p>
+
+<p><code>awk -F ':' '{print $1+2}'</code></p>
+
+<p>O <code>-F</code> determina o separador de campos. O valor a ser somado, <code>+2</code>, é referente ao tamanho do cabeçalho do campo e até poderia ser extraído da linha, mas como é um valor conhecido e fixo no pacote, não valia a pena o esforço.</p>
+
+<p>Tudo junto ficou:</p>
+
+<p><code>openssl asn1parse -in &lt;arquivo da assinatura&gt; | grep signingTime -A 2 | head -3 | tail -1 | awk -F ':' '{print $1+2}'</code></p>
+
+<h2 id="extrair-o-valor-do-signingtime">Extrair o valor do <code>signingTime</code></h2>
+
+<p>De posse do <em>offset</em>, o comando <code>dd</code> permitiu extrair o valor do <code>signingTime</code>:</p>
+
+<p><code>dd if=&lt;arquivo da assinatura&gt; bs=1 count=13 skip=&lt;offset encontrado&gt; status=none</code></p>
+
+<p>A opção <code>bs</code> define o tamanho do bloco e a opção <code>count</code> define a quantidade desses blocos para copiar. No caso, os 13 bytes do arquivo de assinatura a partir da posição determinada pelo <code>skip</code>. O <code>status=none</code> suprime todas as informações de transferência e etc. que o <code>dd</code> normalmente emite, sobrando apenas o valor do <code>signingTime</code>.</p>
+
+<h2 id="alterar-o-valor-do-signingtime">Alterar o valor do <code>signingTime</code></h2>
+
+<p>Nesse ponto, os meus conhecimentos em shell fraquejaram e precisei apelar para um pequeno script em perl para decrementar X segundos do <code>signingTime</code>:</p>
+
+<pre>
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use Time::Piece;
+
+print subtract($ARGV[0], $ARGV[1]);
+
+sub subtract {
+  my ($date, $seconds)=@_;
+  my $t = Time::Piece->strptime($date, "%y%m%d%H%M%SZ");
+  $t-=$seconds;
+  return $t->strftime("%y%m%d%H%M%SZ");
+}
+</pre>
+
+<p>Para implementar isso em shell, teria que descobrir como interpretar a data no formato do <code>signingTime</code> antes de poder alterá-la. Complicado :P.</p>
+
+<p>O script apenas retorna o novo valor de data, sendo necessário colocá-lo no arquivo de assinatura na posição correta. Mais uma vez, o <code>dd</code> faz o trabalho:</p>
+
+<p><code>dd of=&lt;arquivo da assinatura&gt; bs=1 seek=&lt;offset encontrado&gt; count=13 conv=notrunc status=none</code></p>
+
+<p>O <code>seek</code> entra no lugar do <code>skip</code> quando tratamos de uma operação de escrita.</p>
+
+<h2 id="juntando-tudo">Juntando tudo</h2>
+
+<p>Com os passos anteriores testados, bastou juntar tudo para descobrir o valor correto de <code>signingTime</code> para cada assinatura problemática:</p>
+
+<pre>
+FILE=$1
+SIGNATURE=$2
+
+OFFSET=`openssl asn1parse -inform DER -in $SIGNATURE -i | grep signingTime -A 2 | head -3 | tail -1 | awk -F ':' '{print $1+2}'`
+UTCTIME=`dd if=$SIGNATURE bs=1 count=13 skip=$OFFSET status=none`
+FOUND=false
+for i in $(seq 0 1000)
+do       
+  perl time.pl $UTCTIME $i | dd of=$SIGNATURE bs=1 seek=$OFFSET count=13 conv=notrunc status=none 
+  if openssl smime -verify -inform DER -in $SIGNATURE -content $FILE -noverify 2>&1 > /dev/null | grep "Verification successful"
+  then
+    echo $SIGNATURE $i
+    FOUND=true
+    break
+  fi
+done
+if [ "$FOUND" = false ]
+then
+    echo $SIGNATURE "Não encontrada"
+fi
+</pre>
+
+  </div>
+  <div id="disqus_thread"></div>
+</div>
+
+
+<script type="text/javascript">
+var disqus_shortname = "luishgo";
+(function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+}());
+</script>
+
+
+
+<script type="text/javascript">
+    var disqus_shortname = "luishgo";
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+<script src="http://luishgo.github.io/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>
+

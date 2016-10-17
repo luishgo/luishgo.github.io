@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
 <head>
-	<meta name="generator" content="Hugo 0.17" />
   <link href="http://gmpg.org/xfn/11" rel="profile">
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
 
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 
-  <title>Crap Crapersen &middot; Luis HGO</title>
+  <title>Posts &middot; Luis HGO</title>
 
   
   <link rel="stylesheet" href="http://luishgo.github.io/css/poole.css">
@@ -28,7 +27,7 @@
   
   
   
-  <link href="http://luishgo.github.io/index.xml" rel="alternate" type="application/rss+xml" title="Crap Crapersen &middot; Luis HGO" />
+  <link href="http://luishgo.github.io/post/index.xml" rel="alternate" type="application/rss+xml" title="Crap Crapersen &middot; Luis HGO" />
 
   <meta name="description" content="Your default page description">
   <meta name="keywords" content="your,default,page,keywords">
@@ -84,38 +83,14 @@
 
 
 <div class="content container">
-  <div class="posts">
-    
-    
-    <div class="post">
-      <h1 class="post-title">
-        <a href="http://luishgo.github.io/2015/11/26/manipulando-assinaturas-pkcs7-via-shell/">Manipulando assinaturas PKCS#7 via Shell</a>
-      </h1>
-      <span class="post-date">Nov 26, 2015 &middot; 4 minute read &middot; <a href="http://luishgo.github.io/2015/11/26/manipulando-assinaturas-pkcs7-via-shell/#disqus_thread">Comments</a>
-      </span>
-      
-      Esses tempos, estava com um conjunto de mais de 1000 assinaturas inválidas. Eram de diferentes usuários, seria muito complicado refazê-las. Por um problema na geração do pacote PKCS#7, a data salva no atributo signingTime estava adiantada alguns segundos, invalidando a assinatura em questão.
-Para corrigi-las, precisei descobrir como manipular os atributos de uma assinatura PKCS#7. No caso, precisava encontrar o valor de signingTime correto para tornar a assinatura válida. Sabendo que o valor estava adiantado e o atributo tem precisão de segundos, a proposta de solução foi de ir atrasando 1 segundo no signingTime até encontrar o valor onde o pacote PKCS#7 ficaria válido.
-      <a href="http://luishgo.github.io/2015/11/26/manipulando-assinaturas-pkcs7-via-shell/">Read On &rarr;</a>
-      
-    </div>
-    
-    
-    
-  </div>
+  <ul class="posts">
+  
+    <li><a href="http://luishgo.github.io/2015/11/26/manipulando-assinaturas-pkcs7-via-shell/">Manipulando assinaturas PKCS#7 via Shell</a>
+    </span>
+    &middot; <time>Nov 26, 2015</time></li>
+  
+  </ul>
 </div>
-
-
-<script type="text/javascript">
-var disqus_shortname = "luishgo";
-(function () {
-    var s = document.createElement('script'); s.async = true;
-    s.type = 'text/javascript';
-    s.src = '//' + disqus_shortname + '.disqus.com/count.js';
-    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
-}());
-</script>
-
 <script src="http://luishgo.github.io/js/highlight.pack.js"></script>
 <script>hljs.initHighlightingOnLoad();</script>
 </body>

@@ -1,1 +1,0 @@
-Blog baseado no *template* [**Beautiful Jekyll**](https://github.com/daattali/beautiful-jekyll)
