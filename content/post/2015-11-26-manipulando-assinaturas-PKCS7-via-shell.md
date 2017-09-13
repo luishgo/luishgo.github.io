@@ -2,6 +2,7 @@
 date: 2015-11-26T00:00:00Z
 title: Manipulando assinaturas PKCS#7 via Shell
 url: /2015/11/26/manipulando-assinaturas-pkcs7-via-shell/
+categories: ["segurança", "pkcs7", "certificação-digital"]
 ---
 
 Esses tempos, estava com um conjunto de mais de 1000 assinaturas inválidas. Eram de diferentes usuários, seria muito complicado refazê-las. Por um problema na geração do pacote PKCS#7, a data salva no atributo `signingTime` estava adiantada alguns segundos, invalidando a assinatura em questão.
